@@ -92,6 +92,9 @@ export default function Record({ id }: { id: string }) {
           <p style={{ fontSize: 12, marginTop: 12 }}>
             {reported ? <span className="muted">Thanks — reported for review.</span> : <button onClick={doReport} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", textDecoration: "underline", font: "inherit", padding: 0 }}>Report this listing</button>}
           </p>
+          <p className="muted" style={{ fontSize: 12.5, marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 14 }}>
+            Want provable work of your own? <a href="https://geniemadeit.com/app" target="_blank" rel="noreferrer">Create it on GenieMade ↗</a> — every creation is sealed and registered here automatically.
+          </p>
         </div>
       </div>
     </main>
