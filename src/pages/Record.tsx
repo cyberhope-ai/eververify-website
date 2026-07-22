@@ -7,6 +7,7 @@ export default function Record({ id }: { id: string }) {
   const [res, setRes] = useState<VerifyResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [reported, setReported] = useState(false);
 
   useEffect(() => {
     document.title = "EverVerify record";
@@ -21,6 +22,12 @@ export default function Record({ id }: { id: string }) {
 
   function copy() {
     if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); });
+  }
+
+  async function doReport() {
+    const reason = window.prompt("Report this listing — what's wrong with it? (spam, stolen, abusive, etc.)");
+    if (reason === null) return;
+    try { await api.report(id, reason || "unspecified"); setReported(true); } catch { /* ignore */ }
   }
 
   if (loading) return <main className="container" style={{ padding: "60px 0" }}><div className="loading">Loading the record…</div></main>;
@@ -63,6 +70,9 @@ export default function Record({ id }: { id: string }) {
             <Link href="/verify" className="btn btn-ghost btn-sm">Verify another</Link>
           </div>
           <p className="muted" style={{ fontSize: 12.5, marginTop: 14 }}>Anyone can independently confirm this record — the proof is the fingerprint of the file itself, not removable metadata.</p>
+          <p style={{ fontSize: 12, marginTop: 12 }}>
+            {reported ? <span className="muted">Thanks — reported for review.</span> : <button onClick={doReport} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", textDecoration: "underline", font: "inherit", padding: 0 }}>Report this listing</button>}
+          </p>
         </div>
       </div>
     </main>

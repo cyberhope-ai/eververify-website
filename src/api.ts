@@ -32,6 +32,8 @@ export const api = {
     req<{ ok: boolean; count: number; registrations: Registration[] }>("/api/registry/recent"),
   verify: (body: { receipt_id?: string; hash?: string }) =>
     req<VerifyResult>("/api/verify", { method: "POST", body: JSON.stringify(body) }),
+  report: (receipt_id: string, reason: string) =>
+    req<{ ok: boolean; reported?: boolean }>("/api/registry/report", { method: "POST", body: JSON.stringify({ receipt_id, reason }) }),
 };
 
 // Client-side SHA-256 of a file -> hex, so "verify by upload" never sends the image anywhere.
