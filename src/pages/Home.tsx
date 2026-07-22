@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { api, fmtDate, type Registration } from "../api";
+import { api, fmtDate, assetUrl, type Registration } from "../api";
 import { Seal } from "../App";
 
 export default function Home() {
@@ -53,7 +53,7 @@ export default function Home() {
             <div className="feed">
               {regs.slice(0, 12).map((r) => (
                 <Link key={r.receipt_id} href={`/r/${r.receipt_id}`} className="tile">
-                  {r.thumb_url ? <img className="ph" src={r.thumb_url} alt={r.title || "creation"} loading="lazy" /> : <div className="ph empty">no preview</div>}
+                  {r.thumb_url ? <img className="ph" src={assetUrl(r.thumb_url)} alt={r.title || "creation"} loading="lazy" /> : <div className="ph empty">no preview</div>}
                   <span className="sl"><Seal size={15} /></span>
                   <div className="meta">
                     <div className="o">{r.owner || "Anonymous"}</div>

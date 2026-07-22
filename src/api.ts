@@ -1,6 +1,12 @@
 // EverVerify talks directly to the live CyberHopeAI registry engine (QSurface ledger).
 // CORS is open on the engine, so no proxy is needed.
 const BASE = "https://geniemade-engine.cyberhopeai.workers.dev";
+export const ENGINE = BASE;
+// registry thumbs/media come back as engine-relative "/asset/..." paths — make them absolute.
+export function assetUrl(p?: string | null): string | undefined {
+  if (!p) return undefined;
+  return p.startsWith("http") ? p : ENGINE + p;
+}
 
 export type Registration = {
   receipt_id: string;

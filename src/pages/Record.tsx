@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { api, fmtDate, type VerifyResult } from "../api";
+import { api, fmtDate, assetUrl, type VerifyResult } from "../api";
 import { Seal } from "../App";
 
 export default function Record({ id }: { id: string }) {
@@ -16,12 +16,30 @@ export default function Record({ id }: { id: string }) {
   }, [id]);
 
   const auth = !!(res && (res.verified || res.verdict === "authentic" || res.verdict === "registered"));
-  const media = res?.generation?.url;
+  const media = assetUrl(res?.generation?.url);
   const isVideo = res?.generation?.capability?.startsWith("video");
   const url = typeof window !== "undefined" ? window.location.href : "";
 
   function copy() {
     if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); });
+  }
+
+  async function downloadCert() {
+    if (!res) return;
+    const reg = res.registration || {};
+    try {
+      const { generateCertificate } = await import("../certificate");
+      await generateCertificate({
+        imageUrl: media,
+        owner: reg.owner || "—",
+        title: reg.title || null,
+        date: reg.registered_at || res.certificate?.issued_at,
+        hash: res.certificate?.hash || null,
+        receiptId: id,
+        verifyUrl: `https://eververify.org/r/${id}`,
+        capability: res.generation?.capability,
+      });
+    } catch { /* ignore */ }
   }
 
   async function doReport() {
@@ -67,6 +85,7 @@ export default function Record({ id }: { id: string }) {
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
             <button className="btn btn-cyan btn-sm" onClick={copy}>{copied ? "Copied ✓" : "Copy shareable link"}</button>
+            <button className="btn btn-ghost btn-sm" onClick={downloadCert}>Certificate (PDF)</button>
             <Link href="/verify" className="btn btn-ghost btn-sm">Verify another</Link>
           </div>
           <p className="muted" style={{ fontSize: 12.5, marginTop: 14 }}>Anyone can independently confirm this record — the proof is the fingerprint of the file itself, not removable metadata.</p>
