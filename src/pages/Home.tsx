@@ -18,10 +18,10 @@ export default function Home() {
       <section className="hero">
         <div className="container">
           <span className="eyebrow">The public registry of authentic creations</span>
-          <h1>Prove what's real — <em>and that it's yours.</em></h1>
+          <h1>Proof of what's real — <em>and what's AI.</em></h1>
           <p className="lede">
-            EverVerify is the neutral, public registry where any image or video is authenticated and made
-            verifiable forever. Free to join. Independent by design. The record everyone can check.
+            EverVerify gives every creation a permanent public record: who made it, when, whether it's
+            AI-generated, and that it hasn't been altered since. Proof set at the moment of creation — not a guess.
           </p>
           <div className="cta">
             <Link href="/register" className="btn btn-gold">Register your work — free</Link>
@@ -63,6 +63,19 @@ export default function Home() {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* what we prove */}
+      <section className="section">
+        <div className="container">
+          <div className="kicker">What EverVerify proves</div>
+          <h2>Proof by registration — not detection.</h2>
+          <div className="cards">
+            <div className="card"><h3>Provably AI — and disclosed</h3><p>Every image and video created with GenieMade is registered as verifiably AI-generated — with the model and the moment it was made. The honest, compliance-ready way to publish AI content.</p></div>
+            <div className="card"><h3>Authentic &amp; yours</h3><p>Register any creation and get a tamper-evident public record of who registered it and when — your timestamped proof of ownership, and evidence it hasn't been altered since.</p></div>
+            <div className="card"><h3>We prove — we don't guess</h3><p>EverVerify tells you what's on the record. It doesn't scan a random file and pretend to "detect" AI — those tools analyze after the fact and are often wrong. Our proof is set at creation, so it's certain.</p></div>
+          </div>
         </div>
       </section>
 
