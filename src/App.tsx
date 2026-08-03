@@ -41,6 +41,7 @@ function Footer() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text)", fontFamily: "var(--serif)", fontSize: 16 }}><Seal size={18} /> EverVerify</div>
           <div style={{ marginTop: 6 }}>The public registry of authentic creations.</div>
+          <div style={{ marginTop: 8 }}><a href="tel:+18883524613" style={{ color: "var(--text)", fontWeight: 600 }}>📞 888-352-4613</a></div>
         </div>
         <div className="powered">
           A public-benefit service of <b style={{ color: "var(--text)" }}>Hope Training Academy</b>.<br />
