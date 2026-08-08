@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://eververify.org/sitemap.xml
