@@ -16,7 +16,7 @@ export default function Record({ id }: { id: string }) {
   }, [id]);
 
   const auth = !!(res && (res.verified || res.verdict === "authentic" || res.verdict === "registered"));
-  const media = assetUrl(res?.generation?.url);
+  const media = assetUrl(res?.generation?.url || res?.registration?.thumb_url);
   const isVideo = res?.generation?.capability?.startsWith("video");
   const url = typeof window !== "undefined" ? window.location.href : "";
 
