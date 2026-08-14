@@ -5,6 +5,7 @@ import Record from "./pages/Record";
 import Register from "./pages/Register";
 import About from "./pages/About";
 import Account from "./pages/Account";
+import Landing from "./pages/Landing";
 import { useAuth } from "./auth";
 
 export function Seal({ size = 22 }: { size?: number }) {
@@ -66,6 +67,9 @@ export default function App() {
         <Route path="/register" component={Register} />
         <Route path="/about" component={About} />
         <Route path="/account" component={Account} />
+        <Route path="/check/:slug">{(p) => <Landing path={`check/${p.slug}`} />}</Route>
+        <Route path="/how-to/:slug">{(p) => <Landing path={`how-to/${p.slug}`} />}</Route>
+        <Route path="/learn/:slug">{(p) => <Landing path={`learn/${p.slug}`} />}</Route>
         <Route path="/r/:id">{(params) => <Record id={params.id} />}</Route>
         <Route>{() => <div className="container" style={{ padding: "80px 0" }}><h2 style={{ fontFamily: "var(--serif)" }}>Not found</h2><Link href="/">← Back to the registry</Link></div>}</Route>
       </Switch>
