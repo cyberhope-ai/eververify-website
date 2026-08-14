@@ -44,7 +44,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 
 export type FeedPage = { ok: boolean; count: number; next_cursor: string | null; registrations: Registration[] };
 export type RegistryStats = { ok: boolean; total_public: number; creators: number; total_all: number };
-export type EvUser = { id: string; email?: string; plan?: string; credits?: number; display_name?: string; avatar_url?: string | null };
+export type EvUser = { id: string; email?: string; plan?: string; credits?: number; display_name?: string; username?: string; full_name?: string; avatar_url?: string | null };
 export type MineRow = Registration & { is_public: boolean; ever_url: string };
 export type AuthResp = { ok: boolean; token?: string; user?: EvUser; error?: string; detail?: string };
 
@@ -85,7 +85,33 @@ export const api = {
   registryMine: () => req<{ ok: boolean; count: number; registrations: MineRow[] }>("/api/registry/mine"),
   registryPublish: (receipt_id: string, is_public: boolean) =>
     req<{ ok: boolean; receipt_id?: string; is_public?: boolean; error?: string }>("/api/registry/publish", { method: "POST", body: JSON.stringify({ receipt_id, is_public }) }),
+  // certify-in-place: register a file's SHA-256 fingerprint (+ optional thumbnail) — the file itself is never
+  // uploaded. Auth required (Bearer). receipt_id is top-level for a new record; nested under registration for one
+  // that already existed.
+  register: (body: { hash: string; title?: string; is_public?: boolean; thumbnail?: string }) =>
+    req<{ ok: boolean; receipt_id?: string; verify_url?: string; thumb_url?: string; error?: string; message?: string; already_registered?: boolean; mine?: boolean; registration?: { receipt_id?: string; owner?: string } }>(
+      "/api/register", { method: "POST", body: JSON.stringify(body) }),
+  // --- settings ---
+  accountUpdate: (patch: { display_name?: string; username?: string; avatar_url?: string }) =>
+    req<{ ok: boolean; account?: EvUser; error?: string; message?: string }>("/api/account", { method: "PATCH", body: JSON.stringify(patch) }),
+  changePassword: (current_password: string, new_password: string) =>
+    req<{ ok: boolean; error?: string; message?: string }>("/api/account/password", { method: "POST", body: JSON.stringify({ current_password, new_password }) }),
+  addressGet: () => req<{ ok: boolean; address: EvAddress }>("/api/settings/address"),
+  addressPut: (a: EvAddress) => req<{ ok: boolean; address: EvAddress }>("/api/settings/address", { method: "PUT", body: JSON.stringify(a) }),
+  avatarUpload: (file: File) => {
+    const token = getToken();
+    const headers: Record<string, string> = { "content-type": file.type || "image/jpeg" };
+    if (token) headers["authorization"] = `Bearer ${token}`;
+    return fetch(BASE + "/api/account/avatar", { method: "POST", headers, body: file }).then((r) => r.json() as Promise<{ ok: boolean; avatar_url?: string; message?: string }>);
+  },
+  // --- api keys ---
+  keysList: () => req<{ ok: boolean; keys: ApiKey[] }>("/api/keys"),
+  keysCreate: (name: string) => req<{ ok: boolean; id?: string; name?: string; key?: string; prefix?: string; note?: string }>("/api/keys", { method: "POST", body: JSON.stringify({ name }) }),
+  keysRevoke: (id: string) => req<{ ok: boolean }>(`/api/keys/${id}/revoke`, { method: "POST" }),
 };
+
+export type EvAddress = { line1: string; line2: string; city: string; region: string; postal_code: string; country: string };
+export type ApiKey = { id: string; prefix: string; name: string; created_at: string; last_used_at?: string; calls: number; revoked: boolean };
 
 // Client-side SHA-256 of a file -> hex, so "verify by upload" never sends the image anywhere.
 export async function sha256Hex(file: File): Promise<string> {
