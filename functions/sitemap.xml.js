@@ -9,6 +9,11 @@ const STATIC = [
   { p: "/verify", changefreq: "weekly", priority: "0.8" },
   { p: "/register", changefreq: "weekly", priority: "0.7" },
   { p: "/about", changefreq: "monthly", priority: "0.5" },
+  // SEO landing pages (keep in sync with src/landings.ts)
+  { p: "/check/ai-generated", changefreq: "monthly", priority: "0.8" },
+  { p: "/check/deepfake", changefreq: "monthly", priority: "0.8" },
+  { p: "/how-to/verify-a-photo", changefreq: "monthly", priority: "0.8" },
+  { p: "/learn/content-credentials", changefreq: "monthly", priority: "0.7" },
 ];
 
 function xmlEscape(s) {
