@@ -136,3 +136,7 @@ h1,h2,h3{text-wrap:balance}
 .searchbar .input{width:100%}
 .sentinel{height:1px}
 .feed-end{text-align:center;color:var(--muted);font-size:13px;padding:24px 0 4px}
+
+/* auth / account */
+.linklike{background:none;border:none;color:var(--cyan);cursor:pointer;font:inherit;padding:0;text-decoration:underline}
+.pill.good{background:rgba(47,143,91,.16);color:var(--good,#2f8f5b)}
