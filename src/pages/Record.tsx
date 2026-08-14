@@ -3,6 +3,27 @@ import { Link } from "wouter";
 import { api, fmtDate, assetUrl, type VerifyResult } from "../api";
 import { Seal } from "../App";
 
+// --- per-record SEO: unique <title>/description/OpenGraph + JSON-LD, so each /r/<id> indexes as its own
+// page (Googlebot renders this) instead of a near-duplicate. Server-side OG for no-JS unfurlers is layered
+// on separately (the sitemap/edge pass). ---
+function setMeta(name: string, content: string) {
+  let el = document.head.querySelector(`meta[name="${name}"]`);
+  if (!el) { el = document.createElement("meta"); el.setAttribute("name", name); document.head.appendChild(el); }
+  el.setAttribute("content", content);
+}
+function setOG(prop: string, content: string) {
+  let el = document.head.querySelector(`meta[property="${prop}"]`);
+  if (!el) { el = document.createElement("meta"); el.setAttribute("property", prop); document.head.appendChild(el); }
+  el.setAttribute("content", content);
+}
+function setJsonLd(obj: unknown | null) {
+  let el = document.head.querySelector('script[data-ld="record"]');
+  if (obj) {
+    if (!el) { el = document.createElement("script"); el.setAttribute("type", "application/ld+json"); el.setAttribute("data-ld", "record"); document.head.appendChild(el); }
+    el.textContent = JSON.stringify(obj);
+  } else if (el) { el.remove(); }
+}
+
 export default function Record({ id }: { id: string }) {
   const [res, setRes] = useState<VerifyResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,6 +39,39 @@ export default function Record({ id }: { id: string }) {
   const auth = !!(res && (res.verified || res.verdict === "authentic" || res.verdict === "registered"));
   const media = assetUrl(res?.generation?.url || res?.registration?.thumb_url);
   const isVideo = res?.generation?.capability?.startsWith("video");
+
+  // Apply per-record head metadata once the record resolves.
+  useEffect(() => {
+    if (!res) return;
+    const reg = res.registration || {};
+    const owner = reg.owner || "a creator";
+    const when = fmtDate(reg.registered_at || res.certificate?.issued_at);
+    const title = auth
+      ? `${reg.title || "Verified creation"} — Verified on EverVerify`
+      : "Record not found — EverVerify";
+    const desc = auth
+      ? `Authenticity record for "${reg.title || "this creation"}" by ${owner}${when ? `, registered ${when}` : ""} on the EverVerify public registry — cryptographic proof it's authentic and its owner's.`
+      : "This ID isn't on the EverVerify registry.";
+    document.title = title;
+    setMeta("description", desc);
+    setOG("og:title", title);
+    setOG("og:description", desc);
+    setOG("og:type", "website");
+    setOG("og:url", `https://eververify.org/r/${id}`);
+    if (media) setOG("og:image", media);
+    setJsonLd(auth ? {
+      "@context": "https://schema.org",
+      "@type": "CreativeWork",
+      name: reg.title || "Registered creation",
+      creator: { "@type": "Person", name: owner },
+      dateCreated: reg.registered_at || res.certificate?.issued_at || undefined,
+      image: media || undefined,
+      identifier: id,
+      url: `https://eververify.org/r/${id}`,
+      publisher: { "@type": "Organization", name: "EverVerify", url: "https://eververify.org" },
+    } : null);
+    return () => setJsonLd(null);
+  }, [res, id, auth, media]);
   const url = typeof window !== "undefined" ? window.location.href : "";
 
   function copy() {
