@@ -73,9 +73,14 @@ export default function Record({ id }: { id: string }) {
     return () => setJsonLd(null);
   }, [res, id, auth, media]);
   const url = typeof window !== "undefined" ? window.location.href : "";
+  const [badgeCopied, setBadgeCopied] = useState(false);
+  const badgeSnippet = `<a href="https://eververify.org/r/${id}"><img src="https://eververify.org/badge/${id}.svg" alt="Verified by EverVerify" width="196" height="44"></a>`;
 
   function copy() {
     if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); });
+  }
+  function copyBadge() {
+    if (navigator.clipboard) navigator.clipboard.writeText(badgeSnippet).then(() => { setBadgeCopied(true); setTimeout(() => setBadgeCopied(false), 1600); });
   }
 
   async function downloadCert() {
@@ -142,6 +147,18 @@ export default function Record({ id }: { id: string }) {
             <button className="btn btn-ghost btn-sm" onClick={downloadCert}>Certificate (PDF)</button>
             <Link href="/verify" className="btn btn-ghost btn-sm">Verify another</Link>
           </div>
+
+          <div style={{ marginTop: 18, borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+            <div className="kicker" style={{ marginBottom: 8 }}>Embed the badge</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+              <a href={`/r/${id}`}><img src={`/badge/${id}.svg`} alt="Verified by EverVerify" width={196} height={44} /></a>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <p className="muted" style={{ fontSize: 13, margin: "0 0 8px" }}>Add this to your site, listing, or portfolio — it links back here so anyone can confirm it's real.</p>
+                <button className="btn btn-ghost btn-sm" onClick={copyBadge}>{badgeCopied ? "Copied ✓" : "Copy embed code"}</button>
+              </div>
+            </div>
+          </div>
+
           <p className="muted" style={{ fontSize: 12.5, marginTop: 14 }}>Anyone can independently confirm this record — the proof is the fingerprint of the file itself, not removable metadata.</p>
           <p style={{ fontSize: 12, marginTop: 12 }}>
             {reported ? <span className="muted">Thanks — reported for review.</span> : <button onClick={doReport} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", textDecoration: "underline", font: "inherit", padding: 0 }}>Report this listing</button>}
