@@ -130,3 +130,9 @@ h1,h2,h3{text-wrap:balance}
 
 .center{text-align:center}
 .loading{color:var(--muted);font-size:14px;padding:20px 0}
+
+/* registry: search + infinite scroll */
+.searchbar{margin-top:16px}
+.searchbar .input{width:100%}
+.sentinel{height:1px}
+.feed-end{text-align:center;color:var(--muted);font-size:13px;padding:24px 0 4px}

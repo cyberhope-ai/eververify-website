@@ -1,16 +1,89 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { api, fmtDate, assetUrl, type Registration } from "../api";
 import { Seal } from "../App";
 
-export default function Home() {
-  const [regs, setRegs] = useState<Registration[] | null>(null);
-  const [count, setCount] = useState<number | null>(null);
+// Smoothly counts up 0 -> target once target is known (the headline "N certified" figure).
+function useCountUp(target: number | null, ms = 900): number {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (target === null) return;
+    let raf = 0;
+    const start = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / ms);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(Math.round(target * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return val;
+}
 
+export default function Home() {
+  const [stats, setStats] = useState<{ total: number; creators: number } | null>(null);
+  const [items, setItems] = useState<Registration[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [firstLoaded, setFirstLoaded] = useState(false);
+  const [q, setQ] = useState("");
+  const qRef = useRef(q);
+  qRef.current = q;
+  const sentinel = useRef<HTMLDivElement | null>(null);
+  const didMount = useRef(false);
+
+  const total = useCountUp(stats ? stats.total : null);
+
+  // Load one page. reset=true starts fresh (first load or a new search).
+  const load = useCallback(async (reset: boolean) => {
+    setLoading(true);
+    try {
+      const d = await api.registryFeed({ limit: 24, cursor: reset ? null : cursor, q: qRef.current || undefined });
+      setItems((prev) => (reset ? d.registrations : [...prev, ...d.registrations]));
+      setCursor(d.next_cursor);
+      setHasMore(!!d.next_cursor);
+    } catch {
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+      setFirstLoaded(true);
+    }
+  }, [cursor]);
+
+  // First paint: title + headline stats + first page.
   useEffect(() => {
     document.title = "EverVerify — the public registry of authentic creations";
-    api.registryRecent().then((d) => { setRegs(d.registrations || []); setCount(d.count ?? 0); }).catch(() => { setRegs([]); setCount(0); });
+    api.registryStats()
+      .then((s) => setStats({ total: s.total_public, creators: s.creators }))
+      .catch(() => setStats({ total: 0, creators: 0 }));
+    load(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Debounced search: refetch from the top whenever the query changes (skip the mount run).
+  useEffect(() => {
+    if (!didMount.current) { didMount.current = true; return; }
+    const t = setTimeout(() => {
+      setItems([]); setCursor(null); setHasMore(true); setFirstLoaded(false);
+      load(true);
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
+
+  // Infinite scroll: load the next page as the sentinel nears the viewport.
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !loading) load(false);
+    }, { rootMargin: "700px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, loading, load]);
 
   return (
     <main>
@@ -37,31 +110,48 @@ export default function Home() {
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
             <h2>The wall of the real.</h2>
             <div className="statbar">
-              <div className="stat"><span className="n">{count === null ? "—" : count.toLocaleString()}</span><span className="l">creations verified</span></div>
+              <div className="stat"><span className="n">{stats === null ? "—" : total.toLocaleString()}</span><span className="l">creations on the record</span></div>
+              <div className="stat"><span className="n">{stats === null ? "—" : stats.creators.toLocaleString()}</span><span className="l">creators</span></div>
             </div>
           </div>
 
-          {regs === null ? (
+          <div className="searchbar">
+            <input
+              className="input"
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search the registry by creator or title…"
+              aria-label="Search the registry"
+            />
+          </div>
+
+          {!firstLoaded ? (
             <div className="loading">Loading the registry…</div>
-          ) : regs.length === 0 ? (
+          ) : items.length === 0 ? (
             <div className="empty-state">
-              <div className="big">The registry is brand new.</div>
-              <p>Be the first to put a provably-authentic creation on the public record.</p>
-              <Link href="/register" className="btn btn-gold" style={{ marginTop: 14 }}>Register the first creation</Link>
+              <div className="big">{q ? "No matches." : "The registry is brand new."}</div>
+              <p>{q ? "Try a different creator or title." : "Be the first to put a provably-authentic creation on the public record."}</p>
+              {!q && <Link href="/register" className="btn btn-gold" style={{ marginTop: 14 }}>Register the first creation</Link>}
             </div>
           ) : (
-            <div className="feed">
-              {regs.slice(0, 12).map((r) => (
-                <Link key={r.receipt_id} href={`/r/${r.receipt_id}`} className="tile">
-                  {r.thumb_url ? <img className="ph" src={assetUrl(r.thumb_url)} alt={r.title || "creation"} loading="lazy" /> : <div className="ph empty">no preview</div>}
-                  <span className="sl"><Seal size={15} /></span>
-                  <div className="meta">
-                    <div className="o">{r.owner || "Anonymous"}</div>
-                    <div className="d">{fmtDate(r.created_at)}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <>
+              <div className="feed">
+                {items.map((r) => (
+                  <Link key={r.receipt_id} href={`/r/${r.receipt_id}`} className="tile">
+                    {r.thumb_url ? <img className="ph" src={assetUrl(r.thumb_url)} alt={r.title || "creation"} loading="lazy" /> : <div className="ph empty">no preview</div>}
+                    <span className="sl"><Seal size={15} /></span>
+                    <div className="meta">
+                      <div className="o">{r.owner || "Anonymous"}</div>
+                      <div className="d">{fmtDate(r.created_at)}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <div ref={sentinel} className="sentinel" aria-hidden="true" />
+              {loading && <div className="loading">Loading more…</div>}
+              {!hasMore && <div className="feed-end">You've reached the beginning of the record.</div>}
+            </>
           )}
         </div>
       </section>

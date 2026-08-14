@@ -33,9 +33,22 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return (await r.json()) as T;
 }
 
+export type FeedPage = { ok: boolean; count: number; next_cursor: string | null; registrations: Registration[] };
+export type RegistryStats = { ok: boolean; total_public: number; creators: number; total_all: number };
+
 export const api = {
   registryRecent: () =>
     req<{ ok: boolean; count: number; registrations: Registration[] }>("/api/registry/recent"),
+  // Paginated, searchable public feed (keyset cursor) — powers the infinite-scroll registry wall.
+  registryFeed: (p: { limit?: number; cursor?: string | null; q?: string } = {}) => {
+    const u = new URLSearchParams();
+    if (p.limit) u.set("limit", String(p.limit));
+    if (p.cursor) u.set("cursor", p.cursor);
+    if (p.q) u.set("q", p.q);
+    const qs = u.toString();
+    return req<FeedPage>("/api/registry/feed" + (qs ? "?" + qs : ""));
+  },
+  registryStats: () => req<RegistryStats>("/api/registry/stats"),
   verify: (body: { receipt_id?: string; hash?: string }) =>
     req<VerifyResult>("/api/verify", { method: "POST", body: JSON.stringify(body) }),
   report: (receipt_id: string, reason: string) =>
