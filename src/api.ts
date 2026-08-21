@@ -34,6 +34,25 @@ const TOKEN_KEY = "ev_token";
 export function getToken(): string | null { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } }
 export function setToken(t: string | null) { try { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ } }
 
+// --- social sign-in (Google/Microsoft/Facebook) rides the engine's OAuth and returns here with the
+// session token in a #gmtoken= fragment (fragments never hit server logs). Capture it at module load —
+// before any auth.me() — store it, and scrub the URL. ---
+export function captureOauthToken(): boolean {
+  try {
+    const m = window.location.hash.match(/[#&]gmtoken=([^&]+)/);
+    if (!m) return false;
+    setToken(decodeURIComponent(m[1]));
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    return true;
+  } catch { return false; }
+}
+captureOauthToken();
+export type Providers = { ok: boolean; google?: boolean; microsoft?: boolean; facebook?: boolean };
+export function fetchProviders(): Promise<Providers> { return req<Providers>("/api/auth/providers"); }
+export function socialStartUrl(p: "google" | "ms" | "facebook"): string {
+  return `${ENGINE}/api/auth/${p}/start?return_to=${encodeURIComponent(window.location.origin + "/account")}`;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { "content-type": "application/json", ...(init?.headers as Record<string, string> | undefined) };
   const token = getToken();

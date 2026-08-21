@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
-import { api, auth, assetUrl, fmtDate, type EvUser, type MineRow, type EvAddress, type ApiKey } from "../api";
+import { api, auth, assetUrl, fmtDate, fetchProviders, socialStartUrl, type EvUser, type MineRow, type EvAddress, type ApiKey, type Providers } from "../api";
 import { useAuth } from "../auth";
 import { Seal } from "../App";
 
@@ -34,7 +34,11 @@ function SignIn({ onAuthed }: { onAuthed: (u: EvUser) => void }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [tsToken, setTsToken] = useState("");
+  const [prov, setProv] = useState<Providers>({ ok: false });
   const tsRef = useRef<HTMLDivElement | null>(null);
+
+  // social sign-in buttons render only for providers the engine reports configured — no dead buttons
+  useEffect(() => { fetchProviders().then(setProv).catch(() => {}); }, []);
 
   useEffect(() => {
     if (mode !== "signup") return;
@@ -70,6 +74,29 @@ function SignIn({ onAuthed }: { onAuthed: (u: EvUser) => void }) {
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}><Seal size={26} /></div>
       <h1 style={{ fontFamily: "var(--serif)", textAlign: "center", fontSize: 30 }}>{mode === "login" ? "Sign in" : "Create your account"}</h1>
       <p className="muted" style={{ textAlign: "center", marginBottom: 22 }}>One account across EverVerify and GenieMade — {mode === "login" ? "welcome back." : "free, forever."}</p>
+      {(prov.google || prov.microsoft || prov.facebook) && (
+        <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+          {prov.google && (
+            <button className="btn" type="button" style={{ width: "100%" }} onClick={() => { window.location.href = socialStartUrl("google"); }}>
+              <svg width="16" height="16" viewBox="0 0 48 48" style={{ verticalAlign: "-2px", marginRight: 8 }}><path fill="#4285F4" d="M45 24c0-1.6-.1-2.8-.4-4H24v7.5h12c-.2 2-1.7 5-5 7l7.7 6c4.5-4.2 6.3-10.4 6.3-16.5z"/><path fill="#34A853" d="M24 46c6.5 0 11.9-2.1 15.9-5.9l-7.7-6c-2.1 1.4-4.9 2.4-8.2 2.4-6.3 0-11.6-4.2-13.5-9.9l-8 6.1C8.5 40.9 15.6 46 24 46z"/><path fill="#FBBC05" d="M10.5 26.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-8-6.1C1 14.3 0 18 0 22s1 7.7 2.5 10.7l8-6.1z"/><path fill="#EA4335" d="M24 9.5c3.5 0 6 1.5 7.4 2.8l6.8-6.6C34 2 28.6 0 24 0 15.6 0 8.5 5.1 5.5 12.3l8 6.1C15.4 12.7 20.7 9.5 24 9.5z"/></svg>
+              Continue with Google
+            </button>
+          )}
+          {prov.microsoft && (
+            <button className="btn" type="button" style={{ width: "100%" }} onClick={() => { window.location.href = socialStartUrl("ms"); }}>
+              <svg width="15" height="15" viewBox="0 0 23 23" style={{ verticalAlign: "-2px", marginRight: 8 }}><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+              Continue with Microsoft
+            </button>
+          )}
+          {prov.facebook && (
+            <button className="btn" type="button" style={{ width: "100%" }} onClick={() => { window.location.href = socialStartUrl("facebook"); }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" style={{ verticalAlign: "-2px", marginRight: 8 }}><path fill="#1877F2" d="M24 12c0-6.6-5.4-12-12-12S0 5.4 0 12c0 6 4.4 11 10.1 11.9v-8.4H7.1V12h3v-2.6c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4C19.6 23 24 18 24 12z"/></svg>
+              Continue with Facebook
+            </button>
+          )}
+          <div className="muted" style={{ textAlign: "center", fontSize: 12 }}>or use email</div>
+        </div>
+      )}
       <form onSubmit={submit} className="card" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <input className="input" type="email" placeholder="Email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         <input className="input" type="password" placeholder={mode === "login" ? "Password" : "Password (8+ characters)"} autoComplete={mode === "login" ? "current-password" : "new-password"} required minLength={8} value={pw} onChange={(e) => setPw(e.target.value)} />
