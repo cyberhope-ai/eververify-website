@@ -93,8 +93,10 @@ export default function Home() {
           <span className="eyebrow">The public registry of authentic creations</span>
           <h1>Proof of what's real — <em>and what's AI.</em></h1>
           <p className="lede">
-            EverVerify gives every creation a permanent public record: who made it, when, whether it's
-            AI-generated, and that it hasn't been altered since. Proof set at the moment of creation — not a guess.
+            EverVerify gives every creation a permanent public record — cryptographically signed and
+            timestamped: who registered it, when, and the exact digital fingerprint that proves it hasn't
+            been altered since. Creations made with GenieMade carry their provenance from the moment
+            they're made — the model, the time, and the maker, sealed in.
           </p>
           <div className="cta">
             <Link href="/register" className="btn btn-gold">Register your work — free</Link>
