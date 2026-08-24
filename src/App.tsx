@@ -28,7 +28,8 @@ function Nav() {
       <div className="nav-in">
         <Link href="/" className="brand"><Seal size={24} /> EverVerify</Link>
         <div className="nav-links">
-          {link("/", "Registry", "hide-sm")}
+          <a href="/#registry" className="hide-sm">Registry</a>
+          <a href="https://registry.eververify.org" className="hide-sm">Collections</a>
           {link("/verify", "Verify")}
           {link("/about", "About", "hide-sm")}
           {user ? link("/account", "My registry") : link("/account", "Sign in")}

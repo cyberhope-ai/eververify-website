@@ -106,7 +106,7 @@ export default function Home() {
       </section>
 
       {/* registry feed */}
-      <section className="section">
+      <section className="section" id="registry">
         <div className="container">
           <div className="kicker">The registry</div>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
