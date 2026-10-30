@@ -83,6 +83,7 @@ export const auth = {
 };
 
 export const api = {
+  pictureOfDay: () => req<{ok:boolean;day:string;timezone:string;registration:Registration|null}>("/api/registry/picture-of-day"),
   registryRecent: () =>
     req<{ ok: boolean; count: number; registrations: Registration[] }>("/api/registry/recent"),
   // Paginated, searchable public feed (keyset cursor) — powers the infinite-scroll registry wall.
