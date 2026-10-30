@@ -29,6 +29,10 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [firstLoaded, setFirstLoaded] = useState(false);
+  const [feedError, setFeedError] = useState(false);
+  const [refreshed, setRefreshed] = useState<string | null>(null);
+  const [daily, setDaily] = useState<{day:string;registration:Registration|null} | null>(null);
+  const [dailyError, setDailyError] = useState(false);
   const [q, setQ] = useState("");
   const qRef = useRef(q);
   qRef.current = q;
@@ -42,10 +46,14 @@ export default function Home() {
     setLoading(true);
     try {
       const d = await api.registryFeed({ limit: 24, cursor: reset ? null : cursor, q: qRef.current || undefined });
+      if (!d.ok || !Array.isArray(d.registrations)) throw new Error("feed_unavailable");
       setItems((prev) => (reset ? d.registrations : [...prev, ...d.registrations]));
       setCursor(d.next_cursor);
       setHasMore(!!d.next_cursor);
+      setFeedError(false);
+      setRefreshed(new Date().toLocaleTimeString());
     } catch {
+      setFeedError(true);
       setHasMore(false);
     } finally {
       setLoading(false);
@@ -60,6 +68,7 @@ export default function Home() {
       .then((s) => setStats({ total: s.total_public, creators: s.creators }))
       .catch(() => setStats({ total: 0, creators: 0 }));
     load(true);
+    api.pictureOfDay().then(d=>{if(!d.ok)throw new Error();setDaily(d);}).catch(()=>setDailyError(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -105,17 +114,43 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="section" id="picture-of-the-day">
+        <div className="container">
+          <div className="kicker">A different perspective, every day</div>
+          <h2>Picture of the day</h2>
+          <p>One daily random selection from images their owners have shared publicly. Not a competition or endorsement.</p>
+          {daily?.registration ? <div className="daily-picture">
+            <Link href={`/r/${daily.registration.receipt_id}`} className="daily-image-link">
+              <img src={assetUrl(daily.registration.thumb_url)} alt={daily.registration.title || "Today's public creation"}/>
+            </Link>
+            <div className="daily-caption">
+              <span className="eyebrow">{daily.day} · UTC selection</span>
+              <h3>{daily.registration.title || "Untitled creation"}</h3>
+              <p>Registered by <strong>{daily.registration.owner || "Anonymous"}</strong></p>
+              <p>On the registry since {fmtDate(daily.registration.created_at)}</p>
+              <Link href={`/r/${daily.registration.receipt_id}`} className="btn btn-gold">View its public record →</Link>
+              <p className="daily-note">A daily selection from the current public collection; it can change if owners change visibility. New registrations join the following day's selection.</p>
+            </div>
+          </div> : <p role="status">{dailyError ? "Today's selection is temporarily unavailable. You can still browse the public gallery below." : daily ? "No eligible public images for today's selection yet." : "Choosing today's public picture…"}</p>}
+        </div>
+      </section>
+
       {/* registry feed */}
       <section className="section" id="registry">
         <div className="container">
           <div className="kicker">The registry</div>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-            <h2>The wall of the real.</h2>
+            <h2>Newest public creations</h2>
             <div className="statbar">
               <div className="stat"><span className="n">{stats === null ? "—" : total.toLocaleString()}</span><span className="l">creations on the record</span></div>
               <div className="stat"><span className="n">{stats === null ? "—" : stats.creators.toLocaleString()}</span><span className="l">creators</span></div>
             </div>
           </div>
+
+          <p>Newest registrations first. Private creations are never included. To share your own new GenieMade images, visit <a href="https://geniemadeit.com/account">Account → EverVerify sharing</a> or publish selected images from your Vault.</p>
+          <button className="btn btn-ghost" disabled={loading} onClick={()=>load(true)}>Refresh newest creations</button>
+          {refreshed && <p className="daily-note">Gallery checked at {refreshed}. {items[0] && !q ? `Newest public registration: ${fmtDate(items[0].created_at)}.` : ""}</p>}
+          {feedError && <p role="alert">The gallery could not be refreshed. Any displayed records are from the last successful load. Please try Refresh.</p>}
 
           <div className="searchbar">
             <input
@@ -130,7 +165,7 @@ export default function Home() {
 
           {!firstLoaded ? (
             <div className="loading">Loading the registry…</div>
-          ) : items.length === 0 ? (
+          ) : feedError && items.length === 0 ? null : items.length === 0 ? (
             <div className="empty-state">
               <div className="big">{q ? "No matches." : "The registry is brand new."}</div>
               <p>{q ? "Try a different creator or title." : "Be the first to put a provably-authentic creation on the public record."}</p>
